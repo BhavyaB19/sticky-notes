@@ -1,0 +1,191 @@
+/* Sizes are px on purpose: rem follows the page's <html> font size, which many sites change */
+
+/* WXT resets the host with `all: initial !important`, so these need !important too */
+:host {
+    display: block !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: visible !important;
+    z-index: 2147483647 !important;
+}
+
+.note {
+    --bg: #fff59d;
+    --header: #fbe96b;
+    --text: #2b2b2b;
+
+    position: absolute; /* left/top are page coordinates, so notes scroll with the page */
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 6px;
+    box-shadow:
+        0 1px 3px rgb(0 0 0 / 0.15),
+        0 6px 16px rgb(0 0 0 / 0.18);
+    font:
+        14px/1.4 system-ui,
+        -apple-system,
+        'Segoe UI',
+        Roboto,
+        sans-serif;
+    overflow: hidden;
+}
+
+.note[data-color='yellow'] {
+    --bg: #fff59d;
+    --header: #fbe96b;
+}
+.note[data-color='pink'] {
+    --bg: #f8bbd0;
+    --header: #f48fb1;
+}
+.note[data-color='blue'] {
+    --bg: #b3e5fc;
+    --header: #81d4fa;
+}
+.note[data-color='green'] {
+    --bg: #c8e6c9;
+    --header: #a5d6a7;
+}
+.note[data-color='purple'] {
+    --bg: #d1c4e9;
+    --header: #b39ddb;
+}
+
+/* Inline height is set from the note's saved size, so !important is needed to collapse it */
+.note[data-minimized='true'] {
+    height: auto !important;
+}
+.note[data-minimized='true'] .note-body,
+.note[data-minimized='true'] .resize-handle,
+.note[data-minimized='true'] .swatches {
+    display: none;
+}
+
+.note-header {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex: none;
+    height: 28px;
+    padding: 0 4px;
+    background: var(--header);
+    cursor: grab;
+    user-select: none;
+    touch-action: none;
+}
+.note-header:active {
+    cursor: grabbing;
+}
+
+.spacer {
+    flex: 1;
+}
+
+.note-button {
+    all: unset;
+    box-sizing: border-box;
+    min-width: 24px;
+    height: 22px;
+    padding: 0 4px;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 22px;
+    text-align: center;
+    color: var(--text);
+    cursor: pointer;
+}
+.note-button:hover {
+    background: rgb(0 0 0 / 0.1);
+}
+.note-button:focus-visible {
+    outline: 2px solid rgb(0 0 0 / 0.5);
+}
+.note-button.delete.armed {
+    background: #d32f2f;
+    color: #fff;
+    font-weight: 600;
+}
+
+.swatches {
+    display: flex;
+    flex: none;
+    gap: 6px;
+    padding: 6px 8px;
+    background: var(--header);
+    border-top: 1px solid rgb(0 0 0 / 0.08);
+}
+.swatches[hidden] {
+    display: none;
+}
+
+.swatch {
+    all: unset;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1px solid rgb(0 0 0 / 0.25);
+    cursor: pointer;
+}
+.swatch:focus-visible {
+    outline: 2px solid rgb(0 0 0 / 0.5);
+    outline-offset: 1px;
+}
+.swatch[data-color='yellow'] {
+    background: #fff59d;
+}
+.swatch[data-color='pink'] {
+    background: #f8bbd0;
+}
+.swatch[data-color='blue'] {
+    background: #b3e5fc;
+}
+.swatch[data-color='green'] {
+    background: #c8e6c9;
+}
+.swatch[data-color='purple'] {
+    background: #d1c4e9;
+}
+
+.note-body {
+    all: unset;
+    box-sizing: border-box;
+    flex: 1;
+    width: 100%;
+    padding: 8px 10px;
+    font: inherit;
+    color: inherit;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    overflow-y: auto;
+    resize: none;
+}
+.note-body::placeholder {
+    color: rgb(0 0 0 / 0.4);
+}
+
+.resize-handle {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 14px;
+    height: 14px;
+    cursor: nwse-resize;
+    touch-action: none;
+    background: linear-gradient(
+        135deg,
+        transparent 50%,
+        rgb(0 0 0 / 0.25) 50%,
+        rgb(0 0 0 / 0.25) 60%,
+        transparent 60%,
+        transparent 75%,
+        rgb(0 0 0 / 0.25) 75%,
+        rgb(0 0 0 / 0.25) 85%,
+        transparent 85%
+    );
+}

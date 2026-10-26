@@ -1,0 +1,27 @@
+import './style.css';
+import { getUrlKeys } from '@/lib/url';
+import { NotesLayer } from './NotesLayer';
+
+export default defineContentScript({
+    matches: ['<all_urls>'],
+    cssInjectionMode: 'ui', // style.css goes into the Shadow DOM, not the page
+    async main(ctx) {
+        if (!getUrlKeys(location.href)) return; // notes can't live on this page
+
+        const ui = await createShadowRootUi(ctx, {
+            name: 'sticky-notes-layer', // custom element name, needs a hyphen
+            position: 'inline',
+            // <html> rather than <body>: sites that transform or offset <body> would shift every note
+            anchor: 'html',
+            mode: 'closed', // page scripts can't reach into the notes
+            isolateEvents: true, // typing in a note doesn't trigger the page's keyboard shortcuts
+            onMount: (container) => {
+                const layer = new NotesLayer(container, ctx);
+                layer.start().catch((error: unknown) => console.error('[sticky-notes]', error));
+                return layer;
+            },
+            onRemove: (layer) => layer?.destroy(),
+        });
+        ui.mount();
+    },
+});

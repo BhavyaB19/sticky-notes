@@ -33,6 +33,9 @@ export class NotesLayer {
     private lastContextMenu: Point | undefined;
     private reportedCount: number | undefined;
     private unsubscribe: (() => void) | undefined;
+    // Tracked here instead of reading location.href: on single-page sites the change event
+    // arrives before location.href is updated
+    private pageUrl = location.href;
 
     constructor(container: HTMLElement, ctx: ContentScriptContext) {
         this.container = container;
@@ -41,6 +44,10 @@ export class NotesLayer {
 
     async start(): Promise<void> {
         this.unsubscribe = onNotesChanged(() => void this.reload());
+        // Single-page sites (YouTube, GitHub, ...) change the URL without reloading the page
+        this.ctx.addEventListener(window, 'wxt:locationchange', ({ newUrl }) => {
+            this.onLocationChange(newUrl.href);
+        });
         // The context menu click reaches the background without coordinates, so remember them here
         this.ctx.addEventListener(
             window,
@@ -83,7 +90,7 @@ export class NotesLayer {
     async addNote({ scope, position, content }: AddNoteOptions): Promise<void> {
         const note = await createNote({
             scope,
-            url: location.href,
+            url: this.pageUrl,
             title: document.title,
             content,
             x: Math.round(position?.x ?? Math.max(0, scrollX + innerWidth / 2 - DEFAULT_WIDTH / 2)),
@@ -100,10 +107,18 @@ export class NotesLayer {
         view.reveal();
     }
 
+    private onLocationChange(url: string): void {
+        this.flushAll(); // text typed on the old page still goes to that page's notes
+        this.pageUrl = url;
+        // The background clears the badge on navigation, so report even an unchanged count
+        this.reportedCount = undefined;
+        void this.reload();
+    }
+
     private async reload(): Promise<void> {
         // Saves fire change events quickly; only the newest load may render
         const seq = ++this.loadSeq;
-        const notes = await getNotesForUrl(location.href);
+        const notes = await getNotesForUrl(this.pageUrl);
         if (seq !== this.loadSeq || !this.ctx.isValid) return;
         this.render(notes);
     }
@@ -123,7 +138,10 @@ export class NotesLayer {
                 existing.update(note);
                 continue;
             }
-            const view = new NoteView(note, { onFocus: (v) => this.bringToFront(v) });
+            const view = new NoteView(note, {
+                onFocus: (v) => this.bringToFront(v),
+                getPage: () => ({ url: this.pageUrl, title: document.title }),
+            });
             view.el.style.zIndex = String(++this.topZ);
             this.views.set(note.id, view);
             this.container.append(view.el);

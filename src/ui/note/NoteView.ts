@@ -1,5 +1,5 @@
 import { debounce, type Debounced } from '@/lib/debounce';
-import { deleteNote, updateNote } from '@/lib/storage';
+import { changeScope, deleteNote, updateNote } from '@/lib/storage';
 import type { Note, NoteChanges, NoteColor } from '@/lib/types';
 import { makeDraggable } from './drag';
 import { makeResizable } from './resize';
@@ -10,6 +10,7 @@ const DELETE_CONFIRM_MS = 3000;
 
 export interface NoteViewCallbacks {
     onFocus(view: NoteView): void;
+    getPage(): { url: string; title: string }; // the page the user is on right now
 }
 
 function button(className: string, label: string, text: string): HTMLButtonElement {
@@ -32,12 +33,14 @@ export class NoteView {
     private note: Note;
     private readonly callbacks: NoteViewCallbacks;
     private readonly textarea: HTMLTextAreaElement;
+    private readonly scopeButton: HTMLButtonElement;
     private readonly minimizeButton: HTMLButtonElement;
     private readonly deleteButton: HTMLButtonElement;
     private readonly swatches: HTMLElement;
     private readonly saveContent: Debounced<[string]>;
     private readonly cleanups: Array<() => void> = [];
     private deleteTimer: ReturnType<typeof setTimeout> | undefined;
+    private writes: Promise<void> = Promise.resolve();
 
     constructor(note: Note, callbacks: NoteViewCallbacks) {
         this.note = note;
@@ -49,11 +52,18 @@ export class NoteView {
         const header = document.createElement('div');
         header.className = 'note-header';
         const colorButton = button('note-button', 'Change color', '🎨');
+        this.scopeButton = button('note-button', '', ''); // label set in render()
         const spacer = document.createElement('span');
         spacer.className = 'spacer';
         this.minimizeButton = button('note-button', 'Minimize', '–');
         this.deleteButton = button('note-button delete', 'Delete note', '🗑');
-        header.append(colorButton, spacer, this.minimizeButton, this.deleteButton);
+        header.append(
+            colorButton,
+            this.scopeButton,
+            spacer,
+            this.minimizeButton,
+            this.deleteButton,
+        );
 
         this.swatches = document.createElement('div');
         this.swatches.className = 'swatches';
@@ -83,6 +93,7 @@ export class NoteView {
         colorButton.addEventListener('click', () => {
             this.swatches.hidden = !this.swatches.hidden;
         });
+        this.scopeButton.addEventListener('click', () => this.toggleScope());
         this.minimizeButton.addEventListener('click', () => this.toggleMinimized());
         this.deleteButton.addEventListener('click', () => this.onDeleteClick());
         this.el.addEventListener('animationend', () => this.el.classList.remove('highlight'));
@@ -139,6 +150,12 @@ export class NoteView {
         this.minimizeButton.textContent = note.minimized ? '+' : '–';
         this.minimizeButton.title = note.minimized ? 'Expand' : 'Minimize';
         this.minimizeButton.setAttribute('aria-label', this.minimizeButton.title);
+        this.scopeButton.textContent = note.scope === 'page' ? '📄' : '🌐';
+        this.scopeButton.title =
+            note.scope === 'page'
+                ? 'Shown on this page only. Click to show on the whole site'
+                : 'Shown on the whole site. Click to show on this page only';
+        this.scopeButton.setAttribute('aria-label', this.scopeButton.title);
 
         if (note.x !== previous?.x) this.el.style.left = `${note.x}px`;
         if (note.y !== previous?.y) this.el.style.top = `${note.y}px`;
@@ -150,12 +167,26 @@ export class NoteView {
         if (note.content !== previous?.content && !isTyping) this.textarea.value = note.content;
     }
 
-    private save(changes: NoteChanges): void {
-        updateNote(this.note, changes)
+    // Runs this note's storage writes one at a time. Each write reads this.note only when its
+    // turn comes, so it sees the result of the previous one (e.g. a text save after a scope
+    // change goes to the new bucket instead of failing to find the note in the old one).
+    private enqueue(write: () => Promise<Note | void>): void {
+        this.writes = this.writes
+            .then(write)
             .then((note) => {
-                this.note = note;
+                if (note) this.note = note;
             })
             .catch(reportError);
+    }
+
+    private save(changes: NoteChanges): void {
+        this.enqueue(() => updateNote(this.note, changes));
+    }
+
+    private toggleScope(): void {
+        const scope = this.note.scope === 'page' ? 'site' : 'page';
+        this.saveContent.flush(); // queue pending text before the move
+        this.enqueue(() => changeScope(this.note, scope, this.callbacks.getPage()));
     }
 
     private setColor(color: NoteColor): void {
@@ -176,7 +207,7 @@ export class NoteView {
             clearTimeout(this.deleteTimer);
             this.deleteTimer = undefined;
             this.saveContent.cancel();
-            deleteNote(this.note).catch(reportError);
+            this.enqueue(() => deleteNote(this.note));
             return;
         }
 

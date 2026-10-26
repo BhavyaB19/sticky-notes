@@ -171,6 +171,30 @@ describe('changeScope', () => {
         expect(await getNotesForUrl('https://example.com/elsewhere')).toEqual([]);
         expect(await getNotesForUrl(PAGE_URL)).toEqual([moved]);
     });
+
+    it('moves a site note to the page it is being viewed on', async () => {
+        const note = await createNote(pageNote({ scope: 'site' }));
+        const other = { url: 'https://example.com/about', title: 'About' };
+
+        const moved = await changeScope(note, 'page', other);
+
+        expect(moved).toMatchObject({
+            scope: 'page',
+            scopeKey: 'example.com/about',
+            url: other.url,
+            title: 'About',
+        });
+        expect(await getNotesForUrl(other.url)).toEqual([moved]);
+        expect(await getNotesForUrl(PAGE_URL)).toEqual([]);
+    });
+
+    it('keeps the original page when widening to the whole site', async () => {
+        const note = await createNote(pageNote());
+
+        const moved = await changeScope(note, 'site', { url: 'https://example.com/x', title: 'X' });
+
+        expect(moved).toMatchObject({ scopeKey: 'example.com', url: PAGE_URL, title: 'Article 1' });
+    });
 });
 
 describe('getAllNotes', () => {

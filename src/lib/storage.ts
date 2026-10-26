@@ -111,11 +111,19 @@ export async function deleteNote(note: Note): Promise<void> {
     await writeBuckets({ [key]: notes.filter((n) => n.id !== note.id) });
 }
 
-export async function changeScope(note: Note, scope: Scope): Promise<Note> {
+// `page` is where the user is now. Narrowing a site note to "this page" means the page they're
+// looking at, not the one it was first created on. Defaults to the note's own page.
+export async function changeScope(
+    note: Note,
+    scope: Scope,
+    page: { url: string; title: string } = note,
+): Promise<Note> {
     if (scope === note.scope) return note;
 
-    const scopeKey = getScopeKey(note.url, scope);
-    if (scopeKey === null) throw new Error(`Notes are not supported on ${note.url}`);
+    // A site key is the same from any page of the site; only a page key depends on the page
+    const target = scope === 'page' ? page : note;
+    const scopeKey = getScopeKey(target.url, scope);
+    if (scopeKey === null) throw new Error(`Notes are not supported on ${target.url}`);
 
     const oldKey = bucketKey(note.scope, note.scopeKey);
     const newKey = bucketKey(scope, scopeKey);
@@ -123,7 +131,14 @@ export async function changeScope(note: Note, scope: Scope): Promise<Note> {
     const stored = oldNotes.find((n) => n.id === note.id);
     if (!stored) throw new Error(`Note ${note.id} not found`);
 
-    const moved: Note = { ...stored, scope, scopeKey, updatedAt: Date.now() };
+    const moved: Note = {
+        ...stored,
+        scope,
+        scopeKey,
+        url: target.url,
+        title: target.title,
+        updatedAt: Date.now(),
+    };
     await writeBuckets({
         [oldKey]: oldNotes.filter((n) => n.id !== note.id),
         [newKey]: [...newNotes, moved],

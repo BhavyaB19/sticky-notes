@@ -1,69 +1,167 @@
 :root {
-    font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-    line-height: 1.5;
-    font-weight: 400;
+    --bg: #ffffff;
+    --text: #1f1f1f;
+    --muted: #6b6b6b;
+    --border: #e4e4e4;
+    --hover: #f3f3f3;
+    --accent: #f9a825;
+    --accent-text: #1f1f1f;
+    --error: #c62828;
 
     color-scheme: light dark;
-    color: rgba(255, 255, 255, 0.87);
-    background-color: #242424;
-
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    -webkit-text-size-adjust: 100%;
+    font:
+        14px/1.4 system-ui,
+        -apple-system,
+        'Segoe UI',
+        Roboto,
+        sans-serif;
+    color: var(--text);
+    background: var(--bg);
 }
 
-a {
-    font-weight: 500;
-    color: #646cff;
-    text-decoration: inherit;
-}
-a:hover {
-    color: #535bf2;
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #202124;
+        --text: #e8eaed;
+        --muted: #9aa0a6;
+        --border: #3c4043;
+        --hover: #2d2e31;
+        --error: #f28b82;
+    }
 }
 
 body {
     margin: 0;
+    width: 300px;
+    background: var(--bg);
+}
+
+.popup {
     display: flex;
-    place-items: center;
-    min-width: 320px;
-    min-height: 100vh;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px;
 }
 
 h1 {
-    font-size: 3.2em;
-    line-height: 1.1;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+h2 {
+    margin: 0 0 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted);
 }
 
 button {
-    border-radius: 8px;
-    border: 1px solid transparent;
-    padding: 0.6em 1.2em;
-    font-size: 1em;
-    font-weight: 500;
-    font-family: inherit;
-    background-color: #1a1a1a;
+    font: inherit;
+    color: inherit;
     cursor: pointer;
-    transition: border-color 0.25s;
-}
-button:hover {
-    border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-    outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-    :root {
-        color: #213547;
-        background-color: #ffffff;
-    }
-    a:hover {
-        color: #747bff;
-    }
-    button {
-        background-color: #f9f9f9;
-    }
+.actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.actions button {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: transparent;
+    text-align: left;
+}
+.actions button:hover {
+    background: var(--hover);
+}
+.actions button.primary {
+    border-color: var(--accent);
+    background: var(--accent);
+    color: var(--accent-text);
+    font-weight: 600;
+}
+.actions button.primary:hover {
+    filter: brightness(0.95);
+}
+
+.message {
+    margin: 0;
+    color: var(--muted);
+}
+.message.error {
+    color: var(--error);
+}
+
+.empty {
+    margin: 0;
+    color: var(--muted);
+}
+
+.note-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.note-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    text-align: left;
+}
+.note-item:hover {
+    background: var(--hover);
+}
+
+.preview {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.dot {
+    flex: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    border: 1px solid rgb(0 0 0 / 0.2);
+}
+.dot[data-color='yellow'] {
+    background: #fff59d;
+}
+.dot[data-color='pink'] {
+    background: #f8bbd0;
+}
+.dot[data-color='blue'] {
+    background: #b3e5fc;
+}
+.dot[data-color='green'] {
+    background: #c8e6c9;
+}
+.dot[data-color='purple'] {
+    background: #d1c4e9;
+}
+
+.scope {
+    flex: none;
+    font-size: 12px;
+}
+
+button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
 }

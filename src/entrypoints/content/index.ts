@@ -1,4 +1,5 @@
 import './style.css';
+import type { ContentMessage } from '@/lib/messages';
 import { getUrlKeys } from '@/lib/url';
 import { NotesLayer } from './NotesLayer';
 
@@ -23,5 +24,18 @@ export default defineContentScript({
             onRemove: (layer) => layer?.destroy(),
         });
         ui.mount();
+
+        // From the popup, right-click menu and keyboard shortcut (via the background worker)
+        const onMessage = (
+            message: unknown,
+            _sender: unknown,
+            sendResponse: (response: unknown) => void,
+        ) => {
+            ui.mounted?.handleMessage(message as ContentMessage);
+            // Always answer, so the sender can tell "handled" apart from "no content script here"
+            sendResponse({ ok: true });
+        };
+        browser.runtime.onMessage.addListener(onMessage);
+        ctx.onInvalidated(() => browser.runtime.onMessage.removeListener(onMessage));
     },
 });

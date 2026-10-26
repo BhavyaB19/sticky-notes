@@ -85,6 +85,7 @@ export class NoteView {
         });
         this.minimizeButton.addEventListener('click', () => this.toggleMinimized());
         this.deleteButton.addEventListener('click', () => this.onDeleteClick());
+        this.el.addEventListener('animationend', () => this.el.classList.remove('highlight'));
 
         this.cleanups.push(
             makeDraggable(header, this.el, (x, y) => this.save({ x, y })),
@@ -106,6 +107,16 @@ export class NoteView {
 
     focus(): void {
         this.textarea.focus();
+    }
+
+    // Helps the user find the note: expands it, scrolls to it, focuses it and pulses it
+    reveal(): void {
+        if (this.note.minimized) this.toggleMinimized();
+        this.textarea.focus({ preventScroll: true });
+        this.el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        this.el.classList.remove('highlight');
+        void this.el.offsetWidth; // restarts the animation if it's already running
+        this.el.classList.add('highlight');
     }
 
     // Saves any text typed in the last moments, e.g. right before the tab closes

@@ -1,14 +1,25 @@
 import type { ContentScriptContext } from 'wxt/utils/content-script-context';
+import type { BackgroundMessage, ContentMessage } from '@/lib/messages';
 import { createNote, getNotesForUrl, onNotesChanged } from '@/lib/storage';
-import { DEFAULT_WIDTH, type Note } from '@/lib/types';
+import { DEFAULT_WIDTH, type Note, type Scope } from '@/lib/types';
 import { NoteView } from '@/ui/note/NoteView';
 
 // Distance from the top of the visible area for new notes
 const NEW_NOTE_TOP_OFFSET = 80;
 
-function isAddNoteShortcut(e: KeyboardEvent): boolean {
-    // e.code, not e.key: Alt+Shift changes e.key on some keyboard layouts
-    return e.altKey && e.shiftKey && !e.ctrlKey && !e.metaKey && e.code === 'KeyN';
+interface Point {
+    x: number;
+    y: number;
+}
+
+export interface AddNoteOptions {
+    scope: Scope;
+    position?: Point; // page coordinates; defaults to near the top of the visible area
+    content?: string;
+}
+
+function reportError(error: unknown): void {
+    console.error('[sticky-notes]', error);
 }
 
 // Owns every note on the current page: loads them, draws them and keeps them in sync with storage
@@ -19,6 +30,8 @@ export class NotesLayer {
     private topZ = 0;
     private loadSeq = 0;
     private pendingFocusId: string | undefined;
+    private lastContextMenu: Point | undefined;
+    private reportedCount: number | undefined;
     private unsubscribe: (() => void) | undefined;
 
     constructor(container: HTMLElement, ctx: ContentScriptContext) {
@@ -28,8 +41,15 @@ export class NotesLayer {
 
     async start(): Promise<void> {
         this.unsubscribe = onNotesChanged(() => void this.reload());
-        // Capture phase on window, so the shortcut also works while typing inside a note
-        this.ctx.addEventListener(window, 'keydown', (e) => this.onKeyDown(e), { capture: true });
+        // The context menu click reaches the background without coordinates, so remember them here
+        this.ctx.addEventListener(
+            window,
+            'contextmenu',
+            (e) => {
+                this.lastContextMenu = { x: e.pageX, y: e.pageY };
+            },
+            { capture: true },
+        );
         this.ctx.addEventListener(window, 'pagehide', () => this.flushAll());
         this.ctx.addEventListener(document, 'visibilitychange', () => {
             if (document.visibilityState === 'hidden') this.flushAll();
@@ -45,16 +65,39 @@ export class NotesLayer {
         this.views.clear();
     }
 
-    async addNote(): Promise<void> {
+    handleMessage(message: ContentMessage): void {
+        switch (message.type) {
+            case 'add-note':
+                this.addNote({
+                    scope: message.scope,
+                    position: message.atContextMenu ? this.lastContextMenu : undefined,
+                    content: message.content,
+                }).catch(reportError);
+                break;
+            case 'focus-note':
+                this.focusNote(message.id);
+                break;
+        }
+    }
+
+    async addNote({ scope, position, content }: AddNoteOptions): Promise<void> {
         const note = await createNote({
-            scope: 'page',
+            scope,
             url: location.href,
             title: document.title,
-            x: Math.max(0, Math.round(scrollX + innerWidth / 2 - DEFAULT_WIDTH / 2)),
-            y: Math.round(scrollY + NEW_NOTE_TOP_OFFSET),
+            content,
+            x: Math.round(position?.x ?? Math.max(0, scrollX + innerWidth / 2 - DEFAULT_WIDTH / 2)),
+            y: Math.round(position?.y ?? scrollY + NEW_NOTE_TOP_OFFSET),
         });
         this.pendingFocusId = note.id;
         await this.reload();
+    }
+
+    focusNote(id: string): void {
+        const view = this.views.get(id);
+        if (!view) return;
+        this.bringToFront(view);
+        view.reveal();
     }
 
     private async reload(): Promise<void> {
@@ -92,6 +135,19 @@ export class NotesLayer {
             this.bringToFront(focusView);
             focusView.focus();
         }
+
+        this.reportCount(notes.length);
+    }
+
+    // Keeps the toolbar badge in sync with the number of notes on this page
+    private reportCount(count: number): void {
+        if (count === this.reportedCount) return;
+        this.reportedCount = count;
+        const message: BackgroundMessage = { type: 'notes-count', count };
+        // Fails only while the extension is reloading; the next render reports again
+        browser.runtime.sendMessage(message).catch(() => {
+            this.reportedCount = undefined;
+        });
     }
 
     private bringToFront(view: NoteView): void {
@@ -101,12 +157,5 @@ export class NotesLayer {
 
     private flushAll(): void {
         for (const view of this.views.values()) view.flush();
-    }
-
-    private onKeyDown(e: KeyboardEvent): void {
-        if (!isAddNoteShortcut(e) || e.repeat) return;
-        e.preventDefault();
-        e.stopPropagation();
-        this.addNote().catch((error: unknown) => console.error('[sticky-notes]', error));
     }
 }

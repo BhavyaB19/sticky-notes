@@ -36,6 +36,23 @@
     overflow: hidden;
 }
 
+/* Pulse used when the popup jumps to a note, so the eye can find it */
+.note.highlight {
+    animation: note-pulse 0.9s ease-out 2;
+}
+@keyframes note-pulse {
+    from {
+        box-shadow:
+            0 0 0 0 rgb(255 152 0 / 0.8),
+            0 6px 16px rgb(0 0 0 / 0.18);
+    }
+    to {
+        box-shadow:
+            0 0 0 16px rgb(255 152 0 / 0),
+            0 6px 16px rgb(0 0 0 / 0.18);
+    }
+}
+
 .note[data-color='yellow'] {
     --bg: #fff59d;
     --header: #fbe96b;

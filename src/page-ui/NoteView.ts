@@ -5,10 +5,10 @@ import { makeDraggable } from './drag';
 import { makeResizable } from './resize';
 
 const SAVE_DELAY_MS = 400;
-const DELETE_CONFIRM_MS = 3000;
 
 export interface NoteViewCallbacks {
     onFocus(view: NoteView): void;
+    onDeleted(note: Note): void; // after the note is gone from storage, so it can be undone
     getPage(): { url: string; title: string }; // the page the user is on right now
 }
 
@@ -34,11 +34,9 @@ export class NoteView {
     private readonly textarea: HTMLTextAreaElement;
     private readonly scopeButton: HTMLButtonElement;
     private readonly minimizeButton: HTMLButtonElement;
-    private readonly deleteButton: HTMLButtonElement;
     private readonly swatches: HTMLElement;
     private readonly saveContent: Debounced<[string]>;
     private readonly cleanups: Array<() => void> = [];
-    private deleteTimer: ReturnType<typeof setTimeout> | undefined;
     private writes: Promise<void> = Promise.resolve();
 
     constructor(note: Note, callbacks: NoteViewCallbacks) {
@@ -50,19 +48,14 @@ export class NoteView {
 
         const header = document.createElement('div');
         header.className = 'note-header';
-        const colorButton = button('note-button', 'Change color', '🎨');
-        this.scopeButton = button('note-button', '', ''); // label set in render()
+        // "optional" buttons are hidden on very narrow notes (see style.css)
+        const colorButton = button('note-button optional', 'Change color', '🎨');
+        this.scopeButton = button('note-button optional', '', ''); // label set in render()
         const spacer = document.createElement('span');
         spacer.className = 'spacer';
         this.minimizeButton = button('note-button', 'Minimize', '–');
-        this.deleteButton = button('note-button delete', 'Delete note', '🗑');
-        header.append(
-            colorButton,
-            this.scopeButton,
-            spacer,
-            this.minimizeButton,
-            this.deleteButton,
-        );
+        const deleteButton = button('note-button', 'Delete note', '🗑');
+        header.append(colorButton, this.scopeButton, spacer, this.minimizeButton, deleteButton);
 
         this.swatches = document.createElement('div');
         this.swatches.className = 'swatches';
@@ -87,6 +80,9 @@ export class NoteView {
 
         this.textarea.addEventListener('input', () => this.saveContent(this.textarea.value));
         this.textarea.addEventListener('blur', () => this.saveContent.flush());
+        this.textarea.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') this.textarea.blur(); // leave the note, back to the page
+        });
         // Capture phase, so clicking anywhere on the note (even a button) raises it
         this.el.addEventListener('pointerdown', () => this.callbacks.onFocus(this), true);
         colorButton.addEventListener('click', () => {
@@ -94,7 +90,7 @@ export class NoteView {
         });
         this.scopeButton.addEventListener('click', () => this.toggleScope());
         this.minimizeButton.addEventListener('click', () => this.toggleMinimized());
-        this.deleteButton.addEventListener('click', () => this.onDeleteClick());
+        deleteButton.addEventListener('click', () => this.delete());
         this.el.addEventListener('animationend', () => this.el.classList.remove('highlight'));
 
         this.cleanups.push(
@@ -136,7 +132,6 @@ export class NoteView {
 
     destroy(): void {
         this.saveContent.cancel();
-        clearTimeout(this.deleteTimer);
         for (const cleanup of this.cleanups) cleanup();
         this.el.remove();
     }
@@ -200,22 +195,14 @@ export class NoteView {
         this.save({ minimized });
     }
 
-    // First click arms the button, a second click within a few seconds deletes
-    private onDeleteClick(): void {
-        if (this.deleteTimer !== undefined) {
-            clearTimeout(this.deleteTimer);
-            this.deleteTimer = undefined;
-            this.saveContent.cancel();
-            this.enqueue(() => deleteNote(this.note));
-            return;
-        }
-
-        this.deleteButton.classList.add('armed');
-        this.deleteButton.textContent = 'Delete?';
-        this.deleteTimer = setTimeout(() => {
-            this.deleteTimer = undefined;
-            this.deleteButton.classList.remove('armed');
-            this.deleteButton.textContent = '🗑';
-        }, DELETE_CONFIRM_MS);
+    // Deletes right away; the page layer then offers to undo with the copy passed to onDeleted
+    private delete(): void {
+        this.saveContent.cancel();
+        const content = this.textarea.value; // includes text typed in the last moments
+        this.enqueue(async () => {
+            const deleted: Note = { ...this.note, content };
+            await deleteNote(deleted);
+            this.callbacks.onDeleted(deleted);
+        });
     }
 }

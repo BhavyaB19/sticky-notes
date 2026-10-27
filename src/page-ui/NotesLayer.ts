@@ -1,8 +1,10 @@
 import type { ContentScriptContext } from 'wxt/utils/content-script-context';
 import type { BackgroundMessage, ContentMessage } from '@/shared/messages';
-import { createNote, getNotesForUrl, onNotesChanged } from '@/core/storage';
+import { isSiteHidden, onHiddenSitesChanged, setSiteHidden } from '@/core/settings';
+import { createNote, getNotesForUrl, onNotesChanged, restoreNote } from '@/core/storage';
 import { DEFAULT_WIDTH, type Note, type Scope } from '@/core/types';
 import { NoteView } from './NoteView';
+import { UndoToast } from './UndoToast';
 
 // Distance from the top of the visible area for new notes
 const NEW_NOTE_TOP_OFFSET = 80;
@@ -27,12 +29,15 @@ export class NotesLayer {
     private readonly container: HTMLElement;
     private readonly ctx: ContentScriptContext;
     private readonly views = new Map<string, NoteView>();
+    private readonly toast = new UndoToast();
     private topZ = 0;
     private loadSeq = 0;
-    private pendingFocusId: string | undefined;
+    // A note to focus once it's drawn; `reveal` also scrolls to it and expands it
+    private pendingFocus: { id: string; reveal: boolean } | undefined;
     private lastContextMenu: Point | undefined;
     private reportedCount: number | undefined;
-    private unsubscribe: (() => void) | undefined;
+    private hidden = false; // the user hid notes on this site
+    private unsubscribes: Array<() => void> = [];
     // Tracked here instead of reading location.href: on single-page sites the change event
     // arrives before location.href is updated
     private pageUrl = location.href;
@@ -40,10 +45,14 @@ export class NotesLayer {
     constructor(container: HTMLElement, ctx: ContentScriptContext) {
         this.container = container;
         this.ctx = ctx;
+        this.container.append(this.toast.el);
     }
 
     async start(): Promise<void> {
-        this.unsubscribe = onNotesChanged(() => void this.reload());
+        this.unsubscribes.push(
+            onNotesChanged(() => void this.reload()),
+            onHiddenSitesChanged(() => void this.reload()),
+        );
         // Single-page sites (YouTube, GitHub, ...) change the URL without reloading the page
         this.ctx.addEventListener(window, 'wxt:locationchange', ({ newUrl }) => {
             this.onLocationChange(newUrl.href);
@@ -65,11 +74,12 @@ export class NotesLayer {
     }
 
     destroy(): void {
-        this.unsubscribe?.();
-        this.unsubscribe = undefined;
+        for (const unsubscribe of this.unsubscribes) unsubscribe();
+        this.unsubscribes = [];
         this.flushAll();
         for (const view of this.views.values()) view.destroy();
         this.views.clear();
+        this.toast.destroy();
     }
 
     handleMessage(message: ContentMessage): void {
@@ -96,15 +106,24 @@ export class NotesLayer {
             x: Math.round(position?.x ?? Math.max(0, scrollX + innerWidth / 2 - DEFAULT_WIDTH / 2)),
             y: Math.round(position?.y ?? scrollY + NEW_NOTE_TOP_OFFSET),
         });
-        this.pendingFocusId = note.id;
+        this.pendingFocus = { id: note.id, reveal: false };
+        // Adding a note means the user wants to see notes here again
+        if (this.hidden) await setSiteHidden(this.pageUrl, false);
         await this.reload();
     }
 
     focusNote(id: string): void {
         const view = this.views.get(id);
-        if (!view) return;
-        this.bringToFront(view);
-        view.reveal();
+        if (view) {
+            this.bringToFront(view);
+            view.reveal();
+            return;
+        }
+        // Picked from the popup's list while this site's notes are hidden: show them again
+        if (this.hidden) {
+            this.pendingFocus = { id, reveal: true };
+            setSiteHidden(this.pageUrl, false).catch(reportError);
+        }
     }
 
     private onLocationChange(url: string): void {
@@ -118,9 +137,15 @@ export class NotesLayer {
     private async reload(): Promise<void> {
         // Saves fire change events quickly; only the newest load may render
         const seq = ++this.loadSeq;
-        const notes = await getNotesForUrl(this.pageUrl);
+        const [notes, hidden] = await Promise.all([
+            getNotesForUrl(this.pageUrl),
+            isSiteHidden(this.pageUrl),
+        ]);
         if (seq !== this.loadSeq || !this.ctx.isValid) return;
-        this.render(notes);
+        this.hidden = hidden;
+        this.render(hidden ? [] : notes);
+        // The badge counts hidden notes too, as a reminder that they exist
+        this.reportCount(notes.length);
     }
 
     // Reconciles by id instead of redrawing, so typing and dragging aren't interrupted
@@ -140,6 +165,11 @@ export class NotesLayer {
             }
             const view = new NoteView(note, {
                 onFocus: (v) => this.bringToFront(v),
+                onDeleted: (deleted) => {
+                    this.toast.show('Note deleted', () => {
+                        restoreNote(deleted).catch(reportError);
+                    });
+                },
                 getPage: () => ({ url: this.pageUrl, title: document.title }),
             });
             view.el.style.zIndex = String(++this.topZ);
@@ -147,14 +177,14 @@ export class NotesLayer {
             this.container.append(view.el);
         }
 
-        const focusView = this.pendingFocusId ? this.views.get(this.pendingFocusId) : undefined;
-        if (focusView) {
-            this.pendingFocusId = undefined;
+        const pending = this.pendingFocus;
+        const focusView = pending ? this.views.get(pending.id) : undefined;
+        if (pending && focusView) {
+            this.pendingFocus = undefined;
             this.bringToFront(focusView);
-            focusView.focus();
+            if (pending.reveal) focusView.reveal();
+            else focusView.focus();
         }
-
-        this.reportCount(notes.length);
     }
 
     // Keeps the toolbar badge in sync with the number of notes on this page

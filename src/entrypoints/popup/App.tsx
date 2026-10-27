@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { ContentMessage } from '@/shared/messages';
 import { notePreview } from '@/core/preview';
+import { isSiteHidden, setSiteHidden } from '@/core/settings';
 import { getNotesForUrl, onNotesChanged } from '@/core/storage';
 import type { Note } from '@/core/types';
 import { getUrlKeys } from '@/core/url';
@@ -20,6 +21,7 @@ function App() {
     const [page, setPage] = useState<PageState>({ status: 'loading' });
     const [notes, setNotes] = useState<Note[]>([]);
     const [error, setError] = useState<string | null>(null);
+    const [hidden, setHidden] = useState(false);
 
     useEffect(() => {
         getActivePage()
@@ -33,8 +35,15 @@ function App() {
             getNotesForUrl(page.url).then(setNotes).catch(console.error);
         };
         load();
+        isSiteHidden(page.url).then(setHidden).catch(console.error);
         return onNotesChanged(load);
     }, [page]);
+
+    const toggleHidden = (next: boolean) => {
+        if (page.status !== 'ready') return;
+        setHidden(next);
+        setSiteHidden(page.url, next).catch(console.error);
+    };
 
     const send = async (message: ContentMessage) => {
         if (page.status !== 'ready') return;
@@ -78,6 +87,15 @@ function App() {
                             {error}
                         </p>
                     )}
+
+                    <label className="toggle">
+                        <input
+                            type="checkbox"
+                            checked={hidden}
+                            onChange={(e) => toggleHidden(e.target.checked)}
+                        />
+                        Hide notes on {getUrlKeys(page.url)?.siteKey}
+                    </label>
 
                     <section>
                         <h2>On this page ({notes.length})</h2>

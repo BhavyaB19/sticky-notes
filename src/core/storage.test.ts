@@ -10,6 +10,7 @@ import {
     getNotesForUrl,
     importNotes,
     onNotesChanged,
+    restoreNote,
     updateNote,
 } from './storage';
 import { DEFAULT_COLOR, DEFAULT_HEIGHT, DEFAULT_WIDTH, type NewNote } from './types';
@@ -209,6 +210,25 @@ describe('getAllNotes', () => {
         await browser.storage.local.set({ unrelated: 1 });
 
         expect(await getAllNotes()).toEqual([c, b, a]);
+    });
+});
+
+describe('restoreNote', () => {
+    it('brings a deleted note back unchanged', async () => {
+        const note = await createNote(pageNote({ content: 'keep me' }));
+        await deleteNote(note);
+
+        await restoreNote(note);
+
+        expect(await getNotesForUrl(PAGE_URL)).toEqual([note]);
+    });
+
+    it('does not duplicate a note that still exists', async () => {
+        const note = await createNote(pageNote());
+
+        await restoreNote(note);
+
+        expect(await getNotesForUrl(PAGE_URL)).toEqual([note]);
     });
 });
 

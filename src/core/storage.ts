@@ -177,6 +177,15 @@ export async function deleteNote(note: Note): Promise<void> {
     await writeBuckets({ [key]: notes.filter((n) => n.id !== note.id) });
 }
 
+// Puts a deleted note back exactly as it was ("Undo")
+export async function restoreNote(note: Note): Promise<void> {
+    const key = bucketKey(note.scope, note.scopeKey);
+    const notes = await readBucket(key);
+    if (notes.some((n) => n.id === note.id)) return;
+
+    await writeBuckets({ [key]: [...notes, note] });
+}
+
 // `page` is where the user is now. Narrowing a site note to "this page" means the page they're
 // looking at, not the one it was first created on. Defaults to the note's own page.
 export async function changeScope(

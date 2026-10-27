@@ -161,6 +161,19 @@ button {
     font-size: 12px;
 }
 
+.toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 13px;
+    cursor: pointer;
+}
+.toggle input {
+    margin: 0;
+    accent-color: var(--accent);
+}
+
 .all-notes {
     align-self: flex-start;
     padding: 4px 0;

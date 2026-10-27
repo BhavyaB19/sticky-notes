@@ -156,6 +156,25 @@ h2 {
     font-weight: 500;
 }
 
+.hidden-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 400;
+}
+.hidden-tag button {
+    padding: 0 8px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    font-size: 12px;
+}
+.hidden-tag button:hover {
+    background: var(--hover);
+}
+
 .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));

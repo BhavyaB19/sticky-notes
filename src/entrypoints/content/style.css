@@ -34,6 +34,7 @@
         Roboto,
         sans-serif;
     overflow: hidden;
+    container-type: inline-size; /* lets narrow notes adapt; see the end of this file */
 }
 
 /* Pulse used when the popup jumps to a note, so the eye can find it */
@@ -123,14 +124,50 @@
 .note-button:focus-visible {
     outline: 2px solid rgb(0 0 0 / 0.5);
 }
-.note-button.delete.armed {
-    background: #d32f2f;
+
+/* "Note deleted · Undo", fixed to the bottom of the window */
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    z-index: 2147483647; /* notes get rising z-indexes when clicked; stay above all of them */
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 12px 10px 16px;
+    border-radius: 8px;
+    background: #2b2b2b;
     color: #fff;
+    box-shadow: 0 6px 20px rgb(0 0 0 / 0.3);
+    font:
+        14px/1.4 system-ui,
+        -apple-system,
+        'Segoe UI',
+        Roboto,
+        sans-serif;
+}
+.toast[hidden] {
+    display: none;
+}
+.toast-button {
+    all: unset;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: #ffd54f;
     font-weight: 600;
+    cursor: pointer;
+}
+.toast-button:hover {
+    background: rgb(255 255 255 / 0.12);
+}
+.toast-button:focus-visible {
+    outline: 2px solid #ffd54f;
 }
 
 .swatches {
     display: flex;
+    flex-wrap: wrap;
     flex: none;
     gap: 6px;
     padding: 6px 8px;
@@ -180,6 +217,7 @@
     white-space: pre-wrap;
     overflow-wrap: break-word;
     overflow-y: auto;
+    scrollbar-width: thin;
     resize: none;
 }
 .note-body::placeholder {
@@ -205,4 +243,19 @@
         rgb(0 0 0 / 0.25) 85%,
         transparent 85%
     );
+}
+
+/* Narrow notes keep only minimize and delete; widen the note to get color and scope back.
+   Last in the file so it overrides the regular rules above. */
+@container (max-width: 149px) {
+    .note-button.optional {
+        display: none;
+    }
+    .note-header {
+        padding: 0 2px;
+    }
+    .note-body {
+        padding: 4px 8px;
+        scrollbar-width: none; /* no room for it; the wheel still scrolls */
+    }
 }

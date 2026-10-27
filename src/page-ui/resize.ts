@@ -1,5 +1,7 @@
-export const MIN_WIDTH = 160;
-export const MIN_HEIGHT = 100;
+// Small enough for a one-word reminder: the header plus one line of text.
+// style.css hides the less-used header buttons on narrow notes so the rest still fits.
+export const MIN_WIDTH = 80;
+export const MIN_HEIGHT = 56;
 
 interface ResizeStart {
     pointerX: number;

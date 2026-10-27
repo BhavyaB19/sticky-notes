@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BackupError, backupFileName, createBackup, parseBackup } from '@/core/backup';
 import { filterNotes, groupBySite } from '@/core/group';
+import { getHiddenSites, onHiddenSitesChanged, setSiteKeyHidden } from '@/core/settings';
 import { deleteAllNotes, getAllNotes, importNotes, onNotesChanged } from '@/core/storage';
 import type { Note } from '@/core/types';
 import { NoteCard } from './NoteCard';
@@ -37,6 +38,15 @@ function App() {
         };
         load();
         return onNotesChanged(load);
+    }, []);
+
+    const [hiddenSites, setHiddenSites] = useState<string[]>([]);
+    useEffect(() => {
+        const load = () => {
+            getHiddenSites().then(setHiddenSites).catch(console.error);
+        };
+        load();
+        return onHiddenSitesChanged(load);
     }, []);
 
     const groups = useMemo(() => groupBySite(filterNotes(notes ?? [], query)), [notes, query]);
@@ -139,6 +149,21 @@ function App() {
                             <h2>
                                 {group.site}
                                 <span className="count">{group.notes.length}</span>
+                                {hiddenSites.includes(group.site) && (
+                                    <span className="hidden-tag">
+                                        Hidden on this site
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setSiteKeyHidden(group.site, false).catch(
+                                                    console.error,
+                                                );
+                                            }}
+                                        >
+                                            Show
+                                        </button>
+                                    </span>
+                                )}
                             </h2>
                             <div className="grid">
                                 {group.notes.map((note) => (

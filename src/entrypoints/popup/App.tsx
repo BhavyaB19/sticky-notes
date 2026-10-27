@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import type { ContentMessage } from '@/lib/messages';
-import { notePreview } from '@/lib/preview';
-import { getNotesForUrl, onNotesChanged } from '@/lib/storage';
-import type { Note } from '@/lib/types';
-import { getUrlKeys } from '@/lib/url';
+import type { ContentMessage } from '@/shared/messages';
+import { notePreview } from '@/core/preview';
+import { getNotesForUrl, onNotesChanged } from '@/core/storage';
+import type { Note } from '@/core/types';
+import { getUrlKeys } from '@/core/url';
 
 type PageState =
     | { status: 'loading' }

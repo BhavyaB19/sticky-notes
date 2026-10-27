@@ -1,7 +1,7 @@
 import './style.css';
-import type { ContentMessage } from '@/lib/messages';
-import { getUrlKeys } from '@/lib/url';
-import { NotesLayer } from './NotesLayer';
+import type { ContentMessage } from '@/shared/messages';
+import { getUrlKeys } from '@/core/url';
+import { NotesLayer } from '@/page-ui/NotesLayer';
 
 export default defineContentScript({
     matches: ['<all_urls>'],

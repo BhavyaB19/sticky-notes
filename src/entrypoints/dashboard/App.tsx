@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { BackupError, backupFileName, createBackup, parseBackup } from '@/lib/backup';
-import { filterNotes, groupBySite } from '@/lib/group';
-import { deleteAllNotes, getAllNotes, importNotes, onNotesChanged } from '@/lib/storage';
-import type { Note } from '@/lib/types';
+import { BackupError, backupFileName, createBackup, parseBackup } from '@/core/backup';
+import { filterNotes, groupBySite } from '@/core/group';
+import { deleteAllNotes, getAllNotes, importNotes, onNotesChanged } from '@/core/storage';
+import type { Note } from '@/core/types';
 import { NoteCard } from './NoteCard';
 import { useConfirm } from './useConfirm';
 

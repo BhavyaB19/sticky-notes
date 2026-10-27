@@ -1,8 +1,8 @@
 import type { ContentScriptContext } from 'wxt/utils/content-script-context';
-import type { BackgroundMessage, ContentMessage } from '@/lib/messages';
-import { createNote, getNotesForUrl, onNotesChanged } from '@/lib/storage';
-import { DEFAULT_WIDTH, type Note, type Scope } from '@/lib/types';
-import { NoteView } from '@/ui/note/NoteView';
+import type { BackgroundMessage, ContentMessage } from '@/shared/messages';
+import { createNote, getNotesForUrl, onNotesChanged } from '@/core/storage';
+import { DEFAULT_WIDTH, type Note, type Scope } from '@/core/types';
+import { NoteView } from './NoteView';
 
 // Distance from the top of the visible area for new notes
 const NEW_NOTE_TOP_OFFSET = 80;

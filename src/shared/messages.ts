@@ -1,4 +1,4 @@
-import type { Scope } from './types';
+import type { Scope } from '@/core/types';
 
 // Sent from the popup or background worker to the content script in a tab
 export type ContentMessage =

@@ -1,6 +1,6 @@
-import { debounce, type Debounced } from '@/lib/debounce';
-import { changeScope, deleteNote, updateNote } from '@/lib/storage';
-import { NOTE_COLORS, type Note, type NoteChanges, type NoteColor } from '@/lib/types';
+import { debounce, type Debounced } from '@/shared/debounce';
+import { changeScope, deleteNote, updateNote } from '@/core/storage';
+import { NOTE_COLORS, type Note, type NoteChanges, type NoteColor } from '@/core/types';
 import { makeDraggable } from './drag';
 import { makeResizable } from './resize';
 

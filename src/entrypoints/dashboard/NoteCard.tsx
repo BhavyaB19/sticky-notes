@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { debounce } from '@/lib/debounce';
-import { deleteNote, updateNote } from '@/lib/storage';
-import type { Note } from '@/lib/types';
+import { debounce } from '@/shared/debounce';
+import { deleteNote, updateNote } from '@/core/storage';
+import type { Note } from '@/core/types';
 import { useConfirm } from './useConfirm';
 
 const SAVE_DELAY_MS = 400;

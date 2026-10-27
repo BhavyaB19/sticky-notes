@@ -1,5 +1,5 @@
-import { badgeText } from '@/lib/badge';
-import type { BackgroundMessage, ContentMessage } from '@/lib/messages';
+import { badgeText } from './badge';
+import type { BackgroundMessage, ContentMessage } from '@/shared/messages';
 
 const MENU_ID = 'add-note';
 const COMMAND_ADD_NOTE = 'add-note';

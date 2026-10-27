@@ -55,12 +55,78 @@ export async function getNotesForUrl(url: string): Promise<Note[]> {
     return [...pageNotes, ...siteNotes];
 }
 
-export async function getAllNotes(): Promise<Note[]> {
+// Every bucket, keyed by storage key
+async function readAllBuckets(): Promise<Record<string, Note[]>> {
     const everything = (await browser.storage.local.get(null)) as Record<string, unknown>;
-    return Object.entries(everything)
-        .filter(([key]) => key.startsWith(PREFIX))
-        .flatMap(([, notes]) => notes as Note[])
+    return Object.fromEntries(
+        Object.entries(everything).filter(([key]) => key.startsWith(PREFIX)),
+    ) as Record<string, Note[]>;
+}
+
+export async function getAllNotes(): Promise<Note[]> {
+    const buckets = await readAllBuckets();
+    return Object.values(buckets)
+        .flat()
         .sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+export async function deleteAllNotes(): Promise<void> {
+    const keys = Object.keys(await readAllBuckets());
+    if (keys.length > 0) await browser.storage.local.remove(keys);
+}
+
+export interface ImportResult {
+    added: number;
+    updated: number; // replaced an older copy of the same note
+    skipped: number; // already up to date, or for a page notes can't live on
+}
+
+// Merges notes from a backup. A note that already exists (same id) is only replaced
+// when the backup's copy is newer, so importing the same file twice changes nothing.
+export async function importNotes(notes: Note[]): Promise<ImportResult> {
+    const buckets = await readAllBuckets();
+    const bucketOf = new Map<string, string>(); // note id -> bucket key
+    for (const [key, list] of Object.entries(buckets)) {
+        for (const note of list) bucketOf.set(note.id, key);
+    }
+
+    const result: ImportResult = { added: 0, updated: 0, skipped: 0 };
+    const changedKeys = new Set<string>();
+
+    for (const incoming of notes) {
+        // Recomputed rather than trusted, in case the file was edited by hand
+        const scopeKey = getScopeKey(incoming.url, incoming.scope);
+        if (scopeKey === null) {
+            result.skipped++;
+            continue;
+        }
+        const note: Note = { ...incoming, scopeKey };
+
+        const existingKey = bucketOf.get(note.id);
+        if (existingKey !== undefined) {
+            const list = buckets[existingKey] ?? [];
+            const existing = list.find((n) => n.id === note.id);
+            if (existing && existing.updatedAt >= note.updatedAt) {
+                result.skipped++;
+                continue;
+            }
+            buckets[existingKey] = list.filter((n) => n.id !== note.id);
+            changedKeys.add(existingKey);
+            result.updated++;
+        } else {
+            result.added++;
+        }
+
+        const key = bucketKey(note.scope, scopeKey);
+        buckets[key] = [...(buckets[key] ?? []), note];
+        bucketOf.set(note.id, key);
+        changedKeys.add(key);
+    }
+
+    if (changedKeys.size > 0) {
+        await writeBuckets(Object.fromEntries([...changedKeys].map((k) => [k, buckets[k] ?? []])));
+    }
+    return result;
 }
 
 export async function createNote(input: NewNote): Promise<Note> {

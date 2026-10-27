@@ -116,8 +116,19 @@ function App() {
                     </section>
                 </>
             )}
+
+            <button type="button" className="all-notes" onClick={openDashboard}>
+                All notes →
+            </button>
         </main>
     );
+}
+
+function openDashboard(): void {
+    browser.tabs
+        .create({ url: browser.runtime.getURL('/dashboard.html') })
+        .then(() => window.close())
+        .catch(console.error);
 }
 
 export default App;

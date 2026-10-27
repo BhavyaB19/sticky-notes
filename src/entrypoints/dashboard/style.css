@@ -1,0 +1,296 @@
+:root {
+    --bg: #f6f6f4;
+    --surface: #ffffff;
+    --text: #1f1f1f;
+    --muted: #6b6b6b;
+    --border: #e1e1dd;
+    --hover: #ececea;
+    --accent: #f9a825;
+    --error: #c62828;
+    --danger: #d32f2f;
+    --note-text: #2b2b2b;
+
+    color-scheme: light dark;
+    font:
+        14px/1.5 system-ui,
+        -apple-system,
+        'Segoe UI',
+        Roboto,
+        sans-serif;
+    color: var(--text);
+    background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #18191b;
+        --surface: #202124;
+        --text: #e8eaed;
+        --muted: #9aa0a6;
+        --border: #3c4043;
+        --hover: #2d2e31;
+        --error: #f28b82;
+        --danger: #e57373;
+    }
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+}
+
+button {
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+
+.page {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px 48px;
+}
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 0;
+    background: var(--bg);
+}
+
+h1 {
+    margin: 0 8px 0 0;
+    font-size: 20px;
+    font-weight: 650;
+}
+
+.search {
+    flex: 1;
+    min-width: 200px;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: inherit;
+    font: inherit;
+}
+.search:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+}
+
+.toolbar {
+    display: flex;
+    gap: 8px;
+}
+.toolbar button {
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+}
+.toolbar button:hover:not(:disabled) {
+    background: var(--hover);
+}
+.toolbar button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 16px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+}
+.status.error {
+    border-color: var(--error);
+    color: var(--error);
+}
+.status-close {
+    border: 0;
+    background: none;
+    font-size: 18px;
+    line-height: 1;
+    color: var(--muted);
+}
+
+.summary,
+.empty {
+    margin: 0 0 20px;
+    color: var(--muted);
+}
+.empty {
+    margin-top: 40px;
+    text-align: center;
+}
+
+.site {
+    margin-bottom: 32px;
+}
+
+h2 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 600;
+}
+.count {
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--hover);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 14px;
+}
+
+/* Same palette as the notes on pages */
+.card {
+    --card: #fff59d;
+    --card-header: #fbe96b;
+
+    display: flex;
+    flex-direction: column;
+    min-height: 180px;
+    border-radius: 8px;
+    background: var(--card);
+    color: var(--note-text);
+    box-shadow:
+        0 1px 2px rgb(0 0 0 / 0.12),
+        0 4px 12px rgb(0 0 0 / 0.08);
+    overflow: hidden;
+}
+.card[data-color='pink'] {
+    --card: #f8bbd0;
+    --card-header: #f48fb1;
+}
+.card[data-color='blue'] {
+    --card: #b3e5fc;
+    --card-header: #81d4fa;
+}
+.card[data-color='green'] {
+    --card: #c8e6c9;
+    --card-header: #a5d6a7;
+}
+.card[data-color='purple'] {
+    --card: #d1c4e9;
+    --card-header: #b39ddb;
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    background: var(--card-header);
+}
+.scope {
+    flex: none;
+    font-size: 12px;
+}
+.card-link {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    text-decoration: none;
+}
+.card-link:hover {
+    text-decoration: underline;
+}
+.card-delete {
+    flex: none;
+    padding: 0 6px;
+    border: 0;
+    border-radius: 4px;
+    background: none;
+    font-size: 13px;
+    line-height: 22px;
+    color: inherit;
+}
+.card-delete:hover {
+    background: rgb(0 0 0 / 0.1);
+}
+.card-delete.armed {
+    background: var(--danger);
+    color: #fff;
+    font-weight: 600;
+}
+
+.card-body {
+    flex: 1;
+    min-height: 100px;
+    padding: 8px 10px;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    resize: vertical;
+}
+.card-body:focus {
+    outline: none;
+    background: rgb(255 255 255 / 0.35);
+}
+.card-body::placeholder {
+    color: rgb(0 0 0 / 0.4);
+}
+
+.card-footer {
+    padding: 4px 10px 6px;
+    font-size: 11px;
+    color: rgb(0 0 0 / 0.5);
+}
+
+.danger {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 48px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+.danger-button {
+    padding: 8px 14px;
+    border: 1px solid var(--danger);
+    border-radius: 8px;
+    background: none;
+    color: var(--danger);
+}
+.danger-button:hover,
+.danger-button.armed {
+    background: var(--danger);
+    color: #fff;
+}
+.hint {
+    color: var(--muted);
+    font-size: 13px;
+}
+
+button:focus-visible,
+.card-link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}

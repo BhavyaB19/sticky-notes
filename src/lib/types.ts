@@ -1,5 +1,6 @@
 export type Scope = 'page' | 'site';
-export type NoteColor = 'yellow' | 'pink' | 'blue' | 'green' | 'purple';
+export const NOTE_COLORS = ['yellow', 'pink', 'blue', 'green', 'purple'] as const;
+export type NoteColor = (typeof NOTE_COLORS)[number];
 
 export interface Note {
     id: string;

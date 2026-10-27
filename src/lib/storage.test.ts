@@ -4,9 +4,11 @@ import { fakeBrowser } from 'wxt/testing/fake-browser';
 import {
     changeScope,
     createNote,
+    deleteAllNotes,
     deleteNote,
     getAllNotes,
     getNotesForUrl,
+    importNotes,
     onNotesChanged,
     updateNote,
 } from './storage';
@@ -207,6 +209,71 @@ describe('getAllNotes', () => {
         await browser.storage.local.set({ unrelated: 1 });
 
         expect(await getAllNotes()).toEqual([c, b, a]);
+    });
+});
+
+describe('deleteAllNotes', () => {
+    it('removes every note but leaves other keys alone', async () => {
+        await createNote(pageNote());
+        await createNote(pageNote({ url: 'https://other.com/', scope: 'site' }));
+        await browser.storage.local.set({ unrelated: 1 });
+
+        await deleteAllNotes();
+
+        expect(await getAllNotes()).toEqual([]);
+        expect(await storedKeys()).toEqual(['unrelated']);
+    });
+});
+
+describe('importNotes', () => {
+    it('restores notes into the right buckets after everything was deleted', async () => {
+        const page = await createNote(pageNote());
+        const site = await createNote(pageNote({ url: 'https://other.com/a', scope: 'site' }));
+        const backup = await getAllNotes();
+        await deleteAllNotes();
+
+        const result = await importNotes(backup);
+
+        expect(result).toEqual({ added: 2, updated: 0, skipped: 0 });
+        expect(await getNotesForUrl(PAGE_URL)).toEqual([page]);
+        expect(await getNotesForUrl('https://other.com/b')).toEqual([site]);
+    });
+
+    it('changes nothing when importing the same notes twice', async () => {
+        await createNote(pageNote());
+        const backup = await getAllNotes();
+
+        expect(await importNotes(backup)).toEqual({ added: 0, updated: 0, skipped: 1 });
+        expect(await getAllNotes()).toEqual(backup);
+    });
+
+    it('replaces a note only when the backup copy is newer', async () => {
+        const note = await createNote(pageNote({ content: 'old' }));
+        const newer = { ...note, content: 'from backup', updatedAt: note.updatedAt + 1 };
+        const older = { ...note, content: 'stale', updatedAt: note.updatedAt - 1 };
+
+        expect(await importNotes([older])).toEqual({ added: 0, updated: 0, skipped: 1 });
+        expect(await importNotes([newer])).toEqual({ added: 0, updated: 1, skipped: 0 });
+        expect(await getNotesForUrl(PAGE_URL)).toEqual([newer]);
+    });
+
+    it('moves a note whose scope changed in the backup', async () => {
+        const note = await createNote(pageNote());
+        const widened = { ...note, scope: 'site' as const, updatedAt: note.updatedAt + 1 };
+
+        await importNotes([widened]);
+
+        expect(await getNotesForUrl('https://example.com/elsewhere')).toEqual([
+            { ...widened, scopeKey: 'example.com' },
+        ]);
+        expect(await storedKeys()).toEqual(['notes:site:example.com']);
+    });
+
+    it('skips notes for unsupported URLs', async () => {
+        const note = await createNote(pageNote());
+        const broken = { ...note, id: 'other', url: 'chrome://settings' };
+
+        expect(await importNotes([broken])).toEqual({ added: 0, updated: 0, skipped: 1 });
     });
 });
 

@@ -1,10 +1,9 @@
 import { debounce, type Debounced } from '@/lib/debounce';
 import { changeScope, deleteNote, updateNote } from '@/lib/storage';
-import type { Note, NoteChanges, NoteColor } from '@/lib/types';
+import { NOTE_COLORS, type Note, type NoteChanges, type NoteColor } from '@/lib/types';
 import { makeDraggable } from './drag';
 import { makeResizable } from './resize';
 
-const COLORS: NoteColor[] = ['yellow', 'pink', 'blue', 'green', 'purple'];
 const SAVE_DELAY_MS = 400;
 const DELETE_CONFIRM_MS = 3000;
 
@@ -68,7 +67,7 @@ export class NoteView {
         this.swatches = document.createElement('div');
         this.swatches.className = 'swatches';
         this.swatches.hidden = true;
-        for (const color of COLORS) {
+        for (const color of NOTE_COLORS) {
             const swatch = button('swatch', `${color[0]?.toUpperCase()}${color.slice(1)}`, '');
             swatch.dataset.color = color;
             swatch.addEventListener('click', () => this.setColor(color));

@@ -161,6 +161,19 @@ button {
     font-size: 12px;
 }
 
+.all-notes {
+    align-self: flex-start;
+    padding: 4px 0;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    font-size: 13px;
+}
+.all-notes:hover {
+    color: var(--text);
+    text-decoration: underline;
+}
+
 button:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 1px;

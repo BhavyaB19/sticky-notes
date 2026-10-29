@@ -5,6 +5,10 @@ const MENU_ID = 'add-note';
 const COMMAND_ADD_NOTE = 'add-note';
 const BADGE_COLOR = '#f9a825';
 
+// The toolbar button's API: `action` in Chrome's Manifest V3 build, `browserAction` in the
+// Manifest V2 build WXT makes for Firefox. Both have the badge methods used here.
+const toolbarButton = browser.action ?? browser.browserAction;
+
 function sendToTab(tabId: number, message: ContentMessage): void {
     // Fails on pages without the content script (chrome://, or tabs opened before install)
     browser.tabs.sendMessage(tabId, message).catch(() => undefined);
@@ -46,19 +50,19 @@ export default defineBackground(() => {
             .catch(() => undefined);
     });
 
-    void browser.action.setBadgeBackgroundColor({ color: BADGE_COLOR });
+    void toolbarButton.setBadgeBackgroundColor({ color: BADGE_COLOR });
 
     browser.runtime.onMessage.addListener((message: unknown, sender) => {
         const msg = message as BackgroundMessage;
         const tabId = sender.tab?.id;
         if (msg.type !== 'notes-count' || tabId === undefined) return;
-        void browser.action.setBadgeText({ tabId, text: badgeText(msg.count) });
+        void toolbarButton.setBadgeText({ tabId, text: badgeText(msg.count) });
     });
 
     // A new page reports its own count; pages without the content script must not keep an old one
     browser.tabs.onUpdated.addListener((tabId, changeInfo) => {
         if (changeInfo.status === 'loading' && changeInfo.url) {
-            void browser.action.setBadgeText({ tabId, text: '' });
+            void toolbarButton.setBadgeText({ tabId, text: '' });
         }
     });
 });

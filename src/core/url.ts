@@ -1,4 +1,4 @@
-import type { Scope } from './types';
+import { NEW_TAB_KEY, type Scope } from './types';
 
 export interface UrlKeys {
     pageKey: string;
@@ -35,6 +35,7 @@ export function getUrlKeys(rawUrl: string): UrlKeys | null {
 }
 
 export function getScopeKey(rawUrl: string, scope: Scope): string | null {
+    if (scope === 'newtab') return NEW_TAB_KEY; // not tied to any address
     const keys = getUrlKeys(rawUrl);
     if (!keys) return null;
     return scope === 'page' ? keys.pageKey : keys.siteKey;

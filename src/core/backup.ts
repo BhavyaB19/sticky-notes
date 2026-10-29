@@ -33,7 +33,7 @@ function isNote(value: unknown): value is Note {
     return (
         typeof value.id === 'string' &&
         value.id.length > 0 &&
-        (value.scope === 'page' || value.scope === 'site') &&
+        (value.scope === 'page' || value.scope === 'site' || value.scope === 'newtab') &&
         typeof value.url === 'string' &&
         typeof value.title === 'string' &&
         typeof value.content === 'string' &&

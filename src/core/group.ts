@@ -6,7 +6,10 @@ export interface SiteGroup {
     notes: Note[];
 }
 
+export const NEW_TAB_GROUP = 'New tab';
+
 export function siteOf(note: Note): string {
+    if (note.scope === 'newtab') return NEW_TAB_GROUP;
     return getUrlKeys(note.url)?.siteKey ?? note.scopeKey;
 }
 

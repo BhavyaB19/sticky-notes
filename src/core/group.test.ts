@@ -35,6 +35,16 @@ describe('groupBySite', () => {
         ]);
     });
 
+    it('puts new tab notes in their own "New tab" group', () => {
+        const tab = note('t', '', 5, { scope: 'newtab', scopeKey: 'newtab' });
+        const web = note('w', 'https://a.com/', 1);
+
+        expect(groupBySite([web, tab])).toEqual([
+            { site: 'New tab', notes: [tab] },
+            { site: 'a.com', notes: [web] },
+        ]);
+    });
+
     it('does not reorder when a note is edited', () => {
         const older = note('old', 'https://a.com/', 1, { updatedAt: 999 });
         const newer = note('new', 'https://a.com/', 2);

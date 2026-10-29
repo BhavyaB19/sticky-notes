@@ -11,7 +11,8 @@ export default defineConfig({
         description: 'Stick notes on any webpage. They stay until you delete them.',
         // activeTab: lets the popup and the shortcut read the current tab's address in every
         // browser, without the broader "tabs" permission. Adds no install warning.
-        permissions: ['storage', 'contextMenus', 'activeTab'],
+        // search: the new tab page's search box, using the user's default search engine
+        permissions: ['storage', 'contextMenus', 'activeTab', 'search'],
         commands: {
             'add-note': {
                 suggested_key: { default: 'Alt+Shift+N' },

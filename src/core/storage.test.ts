@@ -7,6 +7,7 @@ import {
     deleteAllNotes,
     deleteNote,
     getAllNotes,
+    getNewTabNotes,
     getNotesForUrl,
     importNotes,
     onNotesChanged,
@@ -210,6 +211,48 @@ describe('getAllNotes', () => {
         await browser.storage.local.set({ unrelated: 1 });
 
         expect(await getAllNotes()).toEqual([c, b, a]);
+    });
+});
+
+describe('new tab notes', () => {
+    const newTabNote = (overrides: Partial<NewNote> = {}): NewNote => ({
+        scope: 'newtab',
+        url: '',
+        title: 'New tab',
+        ...overrides,
+    });
+
+    it('are stored in their own bucket and never show on websites', async () => {
+        const note = await createNote(newTabNote({ content: 'groceries' }));
+
+        expect(note.scopeKey).toBe('newtab');
+        expect(await getNewTabNotes()).toEqual([note]);
+        expect(await getNotesForUrl(PAGE_URL)).toEqual([]);
+        expect(await storedKeys()).toEqual(['notes:newtab:newtab']);
+    });
+
+    it('can be updated, deleted, restored and imported like any note', async () => {
+        const note = await createNote(newTabNote());
+        const updated = await updateNote(note, { content: 'edited' });
+        expect(await getNewTabNotes()).toEqual([updated]);
+
+        await deleteNote(updated);
+        expect(await getNewTabNotes()).toEqual([]);
+
+        await restoreNote(updated);
+        expect(await getNewTabNotes()).toEqual([updated]);
+
+        await deleteAllNotes();
+        expect(await importNotes([updated])).toEqual({ added: 1, updated: 0, skipped: 0 });
+        expect(await getNewTabNotes()).toEqual([updated]);
+    });
+
+    it('cannot move to a website or from one', async () => {
+        const tabNote = await createNote(newTabNote());
+        const pageOne = await createNote(pageNote());
+
+        await expect(changeScope(tabNote, 'site')).rejects.toThrow();
+        await expect(changeScope(pageOne, 'newtab')).rejects.toThrow();
     });
 });
 

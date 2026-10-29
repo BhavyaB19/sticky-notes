@@ -1,6 +1,6 @@
 # Privacy Policy
 
-_Last updated: October 28, 2026_
+_Last updated: October 30, 2026_
 
 Sticky Notes is a browser extension for putting notes on webpages. It is built so that your notes stay with you.
 
@@ -28,6 +28,7 @@ The "Export" button on the All notes page saves your notes to a JSON file on you
 - **storage**: saves your notes on your device.
 - **contextMenus**: adds "Add sticky note here" to the right-click menu.
 - **activeTab**: lets the toolbar popup and keyboard shortcut know which page you're on.
+- **search**: the search box on the new tab page hands your query to your browser's default search engine. The extension never sees the results or keeps your searches.
 
 ## Removing your data
 

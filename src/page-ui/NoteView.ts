@@ -144,6 +144,9 @@ export class NoteView {
         this.minimizeButton.textContent = note.minimized ? '+' : '–';
         this.minimizeButton.title = note.minimized ? 'Expand' : 'Minimize';
         this.minimizeButton.setAttribute('aria-label', this.minimizeButton.title);
+        // New tab notes aren't on a website, so there's nothing to switch between.
+        // (Inline style: the button's `all: unset` would override the `hidden` attribute.)
+        this.scopeButton.style.display = note.scope === 'newtab' ? 'none' : '';
         this.scopeButton.textContent = note.scope === 'page' ? '📄' : '🌐';
         this.scopeButton.title =
             note.scope === 'page'
@@ -178,6 +181,7 @@ export class NoteView {
     }
 
     private toggleScope(): void {
+        if (this.note.scope === 'newtab') return;
         const scope = this.note.scope === 'page' ? 'site' : 'page';
         this.saveContent.flush(); // queue pending text before the move
         this.enqueue(() => changeScope(this.note, scope, this.callbacks.getPage()));

@@ -31,6 +31,11 @@ describe('getScopeKey', () => {
         expect(getScopeKey('https://www.x.com/a/b', 'site')).toBe('x.com');
     });
 
+    it('gives every new tab note the same key, whatever the URL', () => {
+        expect(getScopeKey('', 'newtab')).toBe('newtab');
+        expect(getScopeKey('chrome-extension://abc/newtab.html', 'newtab')).toBe('newtab');
+    });
+
     it('returns null for unsupported URLs', () => {
         expect(getScopeKey('chrome://settings', 'site')).toBeNull();
     });

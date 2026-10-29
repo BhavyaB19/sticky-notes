@@ -1,0 +1,122 @@
+:root {
+    --bg: #f4f3ef;
+    --surface: #ffffff;
+    --text: #1f1f1f;
+    --muted: #6b6b6b;
+    --border: #dcdad3;
+    --hover: #ebe9e3;
+    --accent: #f9a825;
+
+    color-scheme: light dark;
+    font:
+        14px/1.5 system-ui,
+        -apple-system,
+        'Segoe UI',
+        Roboto,
+        sans-serif;
+    color: var(--text);
+    background: var(--bg);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #1c1d1f;
+        --surface: #26272a;
+        --text: #e8eaed;
+        --muted: #9aa0a6;
+        --border: #3c4043;
+        --hover: #2f3033;
+    }
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+}
+
+.top {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 14vh 16px 24px;
+}
+
+.search {
+    width: min(560px, 100%);
+}
+.search input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 12px 20px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: inherit;
+    font: inherit;
+    font-size: 16px;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.08);
+}
+.search input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+}
+
+.actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.add {
+    padding: 7px 14px;
+    border: 0;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #1f1f1f;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+.add:hover {
+    filter: brightness(0.95);
+}
+
+.all-notes {
+    color: var(--muted);
+    font-size: 13px;
+    text-decoration: none;
+}
+.all-notes:hover {
+    color: var(--text);
+    text-decoration: underline;
+}
+
+.add:focus-visible,
+.all-notes:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+/* Notes are positioned inside the board, in board coordinates */
+.board {
+    position: relative;
+    min-height: 60vh;
+}
+
+.empty {
+    margin: 48px auto 0;
+    max-width: 420px;
+    color: var(--muted);
+    text-align: center;
+    user-select: none;
+}
+
+kbd {
+    padding: 1px 5px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    font: inherit;
+    font-size: 12px;
+}

@@ -4,6 +4,7 @@ import {
     DEFAULT_COLOR,
     DEFAULT_HEIGHT,
     DEFAULT_WIDTH,
+    NEW_TAB_KEY,
     type NewNote,
     type Note,
     type NoteChanges,
@@ -14,6 +15,7 @@ import { getScopeKey, getUrlKeys } from './url';
 // Notes are grouped into one storage entry ("bucket") per page or site:
 //   "notes:page:github.com/user/repo" -> Note[]
 //   "notes:site:github.com"           -> Note[]
+//   "notes:newtab:newtab"             -> Note[] (the extension's new tab page)
 // The page:/site: part keeps a homepage's page notes apart from its site-wide notes,
 // since both would otherwise have the key "github.com".
 //
@@ -53,6 +55,10 @@ export async function getNotesForUrl(url: string): Promise<Note[]> {
         readBucket(bucketKey('site', keys.siteKey)),
     ]);
     return [...pageNotes, ...siteNotes];
+}
+
+export async function getNewTabNotes(): Promise<Note[]> {
+    return readBucket(bucketKey('newtab', NEW_TAB_KEY));
 }
 
 // Every bucket, keyed by storage key
@@ -194,6 +200,10 @@ export async function changeScope(
     page: { url: string; title: string } = note,
 ): Promise<Note> {
     if (scope === note.scope) return note;
+    // New tab notes have no website to move to or from
+    if (scope === 'newtab' || note.scope === 'newtab') {
+        throw new Error('New tab notes cannot change scope');
+    }
 
     // A site key is the same from any page of the site; only a page key depends on the page
     const target = scope === 'page' ? page : note;

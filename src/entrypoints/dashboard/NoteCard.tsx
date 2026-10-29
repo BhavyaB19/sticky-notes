@@ -1,10 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { debounce } from '@/shared/debounce';
 import { deleteNote, updateNote } from '@/core/storage';
-import type { Note } from '@/core/types';
+import type { Note, Scope } from '@/core/types';
 import { useConfirm } from './useConfirm';
 
 const SAVE_DELAY_MS = 400;
+const NEW_TAB_URL = browser.runtime.getURL('/newtab.html');
+
+const SCOPE_ICONS: Record<Scope, string> = { page: '📄', site: '🌐', newtab: '🗒️' };
+const SCOPE_LABELS: Record<Scope, string> = {
+    page: 'This page only',
+    site: 'Whole site',
+    newtab: 'New tab page',
+};
 
 function formatDate(timestamp: number): string {
     return new Date(timestamp).toLocaleString(undefined, {
@@ -44,14 +52,16 @@ export function NoteCard({ note }: { note: Note }) {
     return (
         <article className="card" data-color={note.color}>
             <header className="card-header">
-                <span
-                    className="scope"
-                    title={note.scope === 'page' ? 'This page only' : 'Whole site'}
-                >
-                    {note.scope === 'page' ? '📄' : '🌐'}
+                <span className="scope" title={SCOPE_LABELS[note.scope]}>
+                    {SCOPE_ICONS[note.scope]}
                 </span>
-                <a className="card-link" href={note.url} target="_blank" rel="noreferrer">
-                    {note.scope === 'site' ? 'Whole site' : note.title || note.url}
+                <a
+                    className="card-link"
+                    href={note.scope === 'newtab' ? NEW_TAB_URL : note.url}
+                    target="_blank"
+                    rel="noreferrer"
+                >
+                    {note.scope === 'page' ? note.title || note.url : SCOPE_LABELS[note.scope]}
                 </a>
                 <button
                     type="button"

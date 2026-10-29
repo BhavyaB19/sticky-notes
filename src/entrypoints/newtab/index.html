@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>New Tab</title>
+    </head>
+    <body>
+        <header class="top">
+            <form class="search" id="search" role="search">
+                <input
+                    type="search"
+                    name="q"
+                    placeholder="Search the web"
+                    aria-label="Search the web"
+                    autocomplete="off"
+                    autofocus
+                />
+            </form>
+            <div class="actions">
+                <button type="button" class="add" id="add">+ New note</button>
+                <a class="all-notes" id="all-notes">All notes</a>
+            </div>
+        </header>
+
+        <main class="board" id="board" aria-label="Notes">
+            <p class="empty" id="empty" hidden>
+                Notes you put here show on every new tab.<br />
+                Click <strong>+ New note</strong>, press
+                <kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>N</kbd>, or double-click anywhere.
+            </p>
+        </main>
+
+        <script type="module" src="./main.ts"></script>
+    </body>
+</html>

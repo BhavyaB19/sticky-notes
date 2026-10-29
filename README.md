@@ -10,6 +10,7 @@ A browser extension for sticking notes on any webpage. Notes stay where you put 
 - **Works on single-page sites** like YouTube and GitHub, where the URL changes without a reload.
 - **Undo** a delete from the toast at the bottom of the page.
 - **Hide notes on a site** from the popup. They're kept and come back when you turn it off.
+- **New tab page**: replaces the browser's new tab page with a board of notes that show on every new tab, plus a search box that uses your default search engine. Double-click anywhere to add a note.
 - **All notes dashboard**: search, edit and delete every note, and export or import a JSON backup.
 - The toolbar badge shows how many notes the current page has.
 
@@ -39,6 +40,7 @@ src/
 ├── entrypoints/   what WXT builds into the extension; kept thin
 │   ├── background/   context menu, keyboard shortcut, toolbar badge
 │   ├── content/      runs on every page and mounts the notes
+│   ├── newtab/       the new tab page (plain TS)
 │   ├── popup/        toolbar popup (React)
 │   └── dashboard/    "All notes" page (React)
 ├── core/          the notes themselves: types, storage, URL rules, backups, settings
@@ -56,6 +58,7 @@ Notes live in `chrome.storage.local`, grouped into one entry per page or per sit
 ```
 notes:page:github.com/acme/app   → [Note, …]
 notes:site:github.com            → [Note, …]
+notes:newtab:newtab              → [Note, …]   (the new tab page)
 ```
 
 A page's address is normalized first (no `www.`, `#hash` or tracking parameters, sorted query), so the same page always finds its notes. Opening a page reads just two entries: its page and its site.

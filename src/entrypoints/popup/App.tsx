@@ -2,19 +2,29 @@ import { useEffect, useState } from 'react';
 import type { ContentMessage } from '@/shared/messages';
 import { notePreview } from '@/core/preview';
 import { isSiteHidden, setSiteHidden } from '@/core/settings';
-import { getNotesForUrl, onNotesChanged } from '@/core/storage';
+import { createNote, getNotesForUrl, onNotesChanged } from '@/core/storage';
 import type { Note } from '@/core/types';
 import { getUrlKeys } from '@/core/url';
 
 type PageState =
     | { status: 'loading' }
     | { status: 'unsupported' }
+    | { status: 'newtab' } // the extension's own new tab page
     | { status: 'ready'; tabId: number; url: string };
 
 async function getActivePage(): Promise<PageState> {
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
+    if (tab?.url?.startsWith(browser.runtime.getURL('/newtab.html'))) return { status: 'newtab' };
     if (tab?.id === undefined || !tab.url || !getUrlKeys(tab.url)) return { status: 'unsupported' };
     return { status: 'ready', tabId: tab.id, url: tab.url };
+}
+
+// The new tab page isn't a website, so there's no content script to message: save the note
+// directly and the page draws it when storage changes
+function addNewTabNote(): void {
+    createNote({ scope: 'newtab', url: '', title: 'New tab', x: 24, y: 24 })
+        .then(() => window.close())
+        .catch(console.error);
 }
 
 function App() {
@@ -62,6 +72,14 @@ function App() {
 
             {page.status === 'unsupported' && (
                 <p className="message">Notes can't be added on this page.</p>
+            )}
+
+            {page.status === 'newtab' && (
+                <div className="actions">
+                    <button type="button" className="primary" onClick={addNewTabNote}>
+                        + Note on new tab
+                    </button>
+                </div>
             )}
 
             {page.status === 'ready' && (
